@@ -1,0 +1,13 @@
+[
+ {
+  "directory": "/home/rob/r/c/study/fundamental_ex",
+  "arguments": [
+   "gcc",
+   "-Wall",
+   "hello_world.c",
+   "-o",
+   "hello"
+  ],
+  "file": "hello_world.c"
+ }
+]
