@@ -2,6 +2,18 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <pwd.h>
+#include <grp.h>
+
+char *getGroupname(gid_t gid) {
+    struct group *grp = getgrgid(gid);
+    return grp->gr_name;
+}
+
+char *getUsername(uid_t uid) {
+    struct passwd *pwd = getpwuid(uid);
+    return pwd->pw_name;
+}
 
 int main(int argc, char **argv) {
 
@@ -54,8 +66,8 @@ int main(int argc, char **argv) {
         printf("Read or Write \n");
 
     printf("i-number: \t\t %lu \n", fileStat.st_ino);
-    printf("User ID: \t\t %d \n", fileStat.st_uid);
-    printf("Group ID: \t\t %d \n", fileStat.st_gid);
+    printf("User ID: \t\t %s(%d) \n", getUsername(fileStat.st_uid), fileStat.st_uid);
+    printf("Group ID: \t\t %s(%d) \n", getGroupname(fileStat.st_gid), fileStat.st_gid);
     printf("Size: \t\t\t  %ld bytes \n", fileStat.st_size);
     printf("Optimal Block Size: \t %ld bytes \n", fileStat.st_blksize);
     printf("Block Count: \t\t %ld blocks \n", fileStat.st_blocks);
