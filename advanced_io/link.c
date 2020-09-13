@@ -5,6 +5,63 @@
 #include <pwd.h>
 #include <grp.h>
 
+#define TYPE(b) ((statp->st_mode & (S_IFMT)) == (b))
+#define MODE(b) ((statp->st_mode & (b)) == (b))
+
+static void print_mode(const struct stat *statp) {
+    if (TYPE(S_IFBLK))
+        putchar('b');
+    else if (TYPE(S_IFCHR))
+        putchar('d');
+    else if (TYPE(S_IFIFO))
+        putchar('p');
+    else if (TYPE(S_IFREG))
+        putchar('-');
+    else if (TYPE(S_IFLNK))
+        putchar('l');
+    else if (TYPE(S_IFSOCK))
+        putchar('s');
+    else
+        putchar('?');
+    
+    putchar(MODE(S_IRUSR) ? 'r' : '-');
+    putchar(MODE(S_IWUSR) ? 'w' : '-');
+    if (MODE(S_ISUID)) {
+        if(MODE(S_IXUSR))
+            putchar('s');
+        else
+            putchar('S');
+    } else if (MODE(S_IXUSR))
+        putchar('x');
+    else
+        putchar('-');
+
+    putchar(MODE(S_IRGRP) ? 'r' : '-');
+    putchar(MODE(S_IWGRP) ? 'w' : '-');
+    if (MODE(S_ISGID)) {
+        if(MODE(S_IXGRP))
+            putchar('s');
+        else
+            putchar('S');
+    } else if (MODE(S_IXGRP))
+        putchar('x');
+    else
+        putchar('-');
+
+    putchar(MODE(S_IROTH) ? 'r' : '-');
+    putchar(MODE(S_IWOTH) ? 'w' : '-');
+
+    if (MODE(S_IFDIR) && MODE(S_ISVTX)) {
+        if(MODE(S_IXOTH))
+            putchar('t');
+        else
+            putchar('T');
+    } else if (MODE(S_IXOTH))
+        putchar('x');
+    else
+        putchar('-');
+}
+
 char *getGroupname(gid_t gid) {
     struct group *grp = getgrgid(gid);
     return grp->gr_name;
@@ -71,7 +128,11 @@ int main(int argc, char **argv) {
     printf("Size: \t\t\t  %ld bytes \n", fileStat.st_size);
     printf("Optimal Block Size: \t %ld bytes \n", fileStat.st_blksize);
     printf("Block Count: \t\t %ld blocks \n", fileStat.st_blocks);
-    
+ 
+    printf("------------------------------------------\n");
+    print_mode(&fileStat);
+    putchar('\n');
+
     return 0;
 }
 
