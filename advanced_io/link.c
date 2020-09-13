@@ -46,6 +46,13 @@ int main(int argc, char **argv) {
     else
         printf("Unknown \n");
 
+    printf("Permission: \t\t");
+
+    if((fileStat.st_mode & (S_IRGRP | S_IWGRP)) == (S_IRGRP|S_IWGRP))
+        printf("Read and Write \n");
+    else if((fileStat.st_mode & S_IRGRP) == S_IRGRP || (fileStat.st_mode & S_IWGRP) == S_IWGRP)
+        printf("Read or Write \n");
+
     printf("i-number: \t\t %lu \n", fileStat.st_ino);
     printf("User ID: \t\t %d \n", fileStat.st_uid);
     printf("Group ID: \t\t %d \n", fileStat.st_gid);
