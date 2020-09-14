@@ -5,6 +5,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define TYPE(b) ((statp->st_mode & (S_IFMT)) == (b))
 #define MODE(b) ((statp->st_mode & (b)) == (b))
@@ -79,6 +80,25 @@ char * getCurrentPath() {
     return getcwd(current_path, 200);
 } 
 
+static void printName(const struct stat *statp, const char *name) {
+    if(S_ISLNK(statp->st_mode)) {
+        char *contents = malloc(statp->st_size +1);
+        ssize_t n;
+
+        if (contents != NULL && (n = readlink(name, contents, statp->st_size)) != -1) {
+            contents[n] = '\0';
+            printf(" %s -> %s", name, contents);
+        }else {
+            printf(" %s -> [can't read link]", name);
+        }
+
+        free(contents);
+    }else {
+        printf("Not Linked: %s", name);
+    }
+}
+
+
 int main(int argc, char **argv) {
 
     if(argc != 2){
@@ -140,7 +160,9 @@ int main(int argc, char **argv) {
     print_mode(&fileStat);
     putchar('\n');
 
-    printf("Path: \t\t\t %s \n", getCurrentPath());
+    printf("Current Path: \t\t %s \n", getCurrentPath());
+    printName(&fileStat, argv[1]);
+    printf("\n");
     return 0;
 }
 
