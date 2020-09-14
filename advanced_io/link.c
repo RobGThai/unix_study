@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <pwd.h>
 #include <grp.h>
+#include <errno.h>
 
 #define TYPE(b) ((statp->st_mode & (S_IFMT)) == (b))
 #define MODE(b) ((statp->st_mode & (b)) == (b))
@@ -72,6 +73,12 @@ char *getUsername(uid_t uid) {
     return pwd->pw_name;
 }
 
+char * getCurrentPath() {
+    char *current_path = NULL;
+    errno = 0;
+    return getcwd(current_path, 200);
+} 
+
 int main(int argc, char **argv) {
 
     if(argc != 2){
@@ -133,6 +140,7 @@ int main(int argc, char **argv) {
     print_mode(&fileStat);
     putchar('\n');
 
+    printf("Path: \t\t\t %s \n", getCurrentPath());
     return 0;
 }
 
