@@ -12,5 +12,7 @@ int main() {
     nread = read(STDIN_FILENO, s, max - 1);
     printf("Err: %i\n", errno);
     printf("Read: %s\n Char: %ld\n", s, nread);
+
+    free(s);
     return 0;
 }
