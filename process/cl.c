@@ -97,14 +97,21 @@ int main(void){
     char *argv[MAXARG];
     int argc;
     bool eof;
-    printf("@ ");
-    getargs(&argc, argv, MAXARG, &eof);
-    if(strchr(argv[0], '=') != NULL)
-        asg(argc, argv);
-    else if(strcmp(argv[0], "set") == 0)
-        set(argc, argv);
-    else
-        execute(argc, argv);
+
+    while(true) {
+        printf("@ ");
+        if(getargs(&argc, argv, MAXARG, &eof) && argc > 0) {
+            if(strchr(argv[0], '=') != NULL)
+                asg(argc, argv);
+            else if(strcmp(argv[0], "set") == 0)
+                set(argc, argv);
+            else
+                execute(argc, argv);
+        }
+
+        if(eof)
+            exit(EXIT_SUCCESS);
+    }
 
     return 0;
 }
