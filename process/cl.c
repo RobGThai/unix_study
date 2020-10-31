@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define MAXLINE 200
 #define MAXARG 20
@@ -91,6 +93,24 @@ static bool getargs(int *argcp, char *argv[], int max, bool *eofp) {
 static void execute(int argc, char *argv[]) {
     execvp(argv[0], argv);
     printf("Can't execute\n");
+}
+
+static void execute2(int argc, char *argv[]) {
+    pid_t pid;
+
+    switch(pid = fork()) {
+        case -1: 
+            printf("Parent error");
+            break;
+        case 0:
+            execvp(argv[0], argv);
+            printf("Should not reach here");
+            break;
+        default:
+            wait(NULL);
+    }
+
+    return ;
 }
 
 int main(void){
