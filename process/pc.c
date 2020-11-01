@@ -5,11 +5,16 @@
 #include "display.h"
 
 static bool wait_and_display(void) {
-    pid_t wpid;
-    int status;
+//     pid_t wpid;
+//     int status;
+// 
+//     wpid = waitpid(-1, &status, 0);
+//     display_status(wpid, status);
+// 
+    siginfo_t info;
 
-    wpid = waitpid(-1, &status, 0);
-    display_status(wpid, status);
+    waitid(P_ALL, 0, &info, WEXITED);
+    display_status_s(&info);
 
     return true;
 }

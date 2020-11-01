@@ -24,4 +24,8 @@ void display_status(pid_t pid, int status) {
 
 void display_status_s(siginfo_t *infop) {
     printf("Process %ld terminated:\n", (long) infop->si_pid);
+    printf("\tcode = %d\n", infop->si_code);
+    if(infop->si_code == CLD_EXITED)
+        printf("\texit value = %d\n", infop->si_status);
+    printf("\terror = %d\n", infop->si_errno);
 }
