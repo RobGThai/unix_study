@@ -30,7 +30,8 @@ int main(void) {
 
     /* Case 2: Termination by kernel */
     if(fork() == 0) {
-        int a, b = 0;
+        int a = 0;
+        int b = 0;
         a = 1 / b;
         _exit(EXIT_SUCCESS);
     }
