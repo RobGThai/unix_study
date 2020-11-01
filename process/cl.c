@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
+
+#include "display.h"
 
 #define MAXLINE 200
 #define MAXARG 20
@@ -113,6 +116,26 @@ static void execute2(int argc, char *argv[]) {
     return ;
 }
 
+static void execute3(int argc, char *argv[]) {
+    pid_t pid;
+    int status;
+
+    switch(pid = fork()) {
+        case -1: 
+            printf("Parent error");
+            break;
+        case 0:
+            execvp(argv[0], argv);
+            printf("Should not reach here");
+            break;
+        default:
+           waitpid(pid, &status, 0);
+           display_status(pid, status);
+    }
+
+    return;
+}
+
 int main(void){
     char *argv[MAXARG];
     int argc;
@@ -126,7 +149,7 @@ int main(void){
             else if(strcmp(argv[0], "set") == 0)
                 set(argc, argv);
             else
-                execute(argc, argv);
+                execute3(argc, argv);
         }
 
         if(eof)
