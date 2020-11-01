@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/wait.h>
 
 #include "display.h"
@@ -27,5 +28,8 @@ void display_status_s(siginfo_t *infop) {
     printf("\tcode = %d\n", infop->si_code);
     if(infop->si_code == CLD_EXITED)
         printf("\texit value = %d\n", infop->si_status);
+    else
+        printf("\tsignal = %d(%s)\n", infop->si_signo, strsignal(infop->si_signo));
+
     printf("\terror = %d\n", infop->si_errno);
 }
