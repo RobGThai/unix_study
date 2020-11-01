@@ -8,4 +8,4 @@ cl:
 
 pc:
 	@echo 'Process COntrol'
-	gcc -Wall -std=c99 pc.c -o pc.o
+	gcc -Wall -std=c99 pc.c display.c -o pc.o
