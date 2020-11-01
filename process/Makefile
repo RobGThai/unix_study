@@ -8,4 +8,4 @@ cl:
 
 pc:
 	@echo 'Process COntrol'
-	gcc -Wall -std=c99 pc.c display.c -o pc.o
+	gcc -Wall -std=c99 -D_POSIX_C_SOURCE=199309L pc.c display.c -o pc.o

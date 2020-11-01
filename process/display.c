@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <sys/wait.h>
+
 #include "display.h"
 
 void display_status(pid_t pid, int status) {
@@ -16,7 +19,9 @@ void display_status(pid_t pid, int status) {
 //         else if(WIFCONTINUED(status))
 //             printf(" (continued)");
 // #endif
-        printf("\n");
     }
 }
 
+void display_status_s(siginfo_t *infop) {
+    printf("Process %ld terminated:\n", (long) infop->si_pid);
+}
