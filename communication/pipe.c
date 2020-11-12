@@ -26,7 +26,24 @@ void pipetest(int pread, int pwrite) {
         printf("read %ld bytes: %s\n", (long)nread, s);
 }
 
-int main(void) {
+void pipewrite(int pread, int pwrite) {
+    char fdstr[10];
+
+    switch(fork()) {
+        case -1:
+            printf("Fork error.\n");
+        case 0: /* Child */
+            close(pwrite);
+            snprintf(fdstr, sizeof(fdstr), "%d", pread);
+            execlp("./pread.o", "piperead", fdstr, (char *)NULL);
+            printf("Failed if reached.\n");
+        default:
+            close(pread);
+            write(pwrite, "hello", 6);
+    }
+}
+
+void test() {
     int pfd[2];
 
     int result = pipe(pfd);
@@ -36,5 +53,14 @@ int main(void) {
 //     check_buffer_size(pfd[1]);
     printf("--------------------\n");
     pipetest(pfd[0], pfd[1]);
+
+}
+
+int main(int argc, char *argv[]) {
+    int pfd[2];
+    pipe(pfd);
+    pipewrite(pfd[0], pfd[1]);
+
     return EXIT_SUCCESS;
 }
+
