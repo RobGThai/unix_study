@@ -14,6 +14,18 @@ long check_buffer_size(int pfd) {
     return v;
 }
 
+void pipetest(int pread, int pwrite) {
+    ssize_t nread;
+    char s[100];
+
+    write(pwrite, "hello", 6);
+    nread = read(pread, s, sizeof(s));
+    if(nread == 0)
+        printf("EOF\n");
+    else
+        printf("read %ld bytes: %s\n", (long)nread, s);
+}
+
 int main(void) {
     int pfd[2];
 
@@ -22,6 +34,7 @@ int main(void) {
     check_buffer_size(pfd[0]);
 //     Commented because the limit is from system level.
 //     check_buffer_size(pfd[1]);
-
+    printf("--------------------\n");
+    pipetest(pfd[0], pfd[1]);
     return EXIT_SUCCESS;
 }
