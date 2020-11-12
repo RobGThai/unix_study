@@ -26,20 +26,21 @@ void pipetest(int pread, int pwrite) {
         printf("read %ld bytes: %s\n", (long)nread, s);
 }
 
-void pipewrite(int pread, int pwrite) {
+void pipewrite(int readfd, int writefd) {
     char fdstr[10];
 
     switch(fork()) {
         case -1:
             printf("Fork error.\n");
         case 0: /* Child */
-            close(pwrite);
-            snprintf(fdstr, sizeof(fdstr), "%d", pread);
+            close(writefd);
+            // Convert pread into string to pass to pread.
+            snprintf(fdstr, sizeof(fdstr), "%d", readfd);
             execlp("./pread.o", "piperead", fdstr, (char *)NULL);
             printf("Failed if reached.\n");
         default:
-            close(pread);
-            write(pwrite, "hello", 6);
+            close(readfd);
+            write(writefd, "hello", 6);
     }
 }
 
