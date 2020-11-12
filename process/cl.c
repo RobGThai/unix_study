@@ -5,9 +5,11 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <grp.h>
 
 #include "display.h"
 
@@ -136,12 +138,34 @@ static void execute3(int argc, char *argv[]) {
     return;
 }
 
+void print_user() {
+    uid_t uid, euid;
+    gid_t gid, egid;
+    struct passwd *pwd, *epwd;
+    struct group *grp, *egrp;
+
+    uid = getuid();
+    pwd = getpwuid(uid);
+
+    euid = geteuid();
+    epwd = getpwuid(euid);
+
+    gid = getgid();
+    grp = getgrgid(gid);
+    
+    egid = getegid();
+    egrp = getgrgid(egid);
+    printf("%ld(%s) as %ld(%s)\n", (long)uid, pwd->pw_name, (long)euid, epwd->pw_name);
+    printf("Group %ld(%s) as %ld(%s)\n", (long)gid, grp->gr_name, (long)egid, egrp->gr_name);
+}
+
 int main(void){
     char *argv[MAXARG];
     int argc;
     bool eof;
 
     while(true) {
+        print_user();
         printf("@ ");
         if(getargs(&argc, argv, MAXARG, &eof) && argc > 0) {
             if(strchr(argv[0], '=') != NULL)
