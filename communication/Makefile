@@ -13,3 +13,7 @@ who:
 sh:
 	@echo "Shell"
 	gcc -Wall -std=c99 -D_POSIX_C_SOURCE=200809L shell.c display.c -o sh.o
+
+sort:
+	@echo "fsort"
+	gcc -Wall -std=c99 -D_POSIX_C_SOURCE=200809L fsort.c display.c -o s.o
