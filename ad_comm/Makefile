@@ -1,18 +1,19 @@
 CC := gcc
-default:
-	@echo 'default'
-	$(CC) -Wall -std=c99 fifo_app.c -o fifo_app.o
+WFLAG := -Wall
+STD := c99
+
+.PHONY: fifo smi_server
 
 fserver:
-	@echo 'default'
-	$(CC) -Wall -std=c99 fifo_app.c -o fifo_app.o
+	@echo 'FIFO server'
+	$(CC) $(WFALG) -std=$(STD) fifo_app.c -o fifo_app.o
 
 fclient:
 	@echo 'FIFO client'
-	$(CC) -Wall -std=c99 fifo_app_client.c -o fifo_client.o
+	$(CC) $(WFALG) -std=$(STD) fifo_app_client.c -o fifo_client.o
 
 fifo: fserver fclient
 
 smi_server:
 	@echo 'SMI Server'
-	$(CC) -Wall -std=c99 smi_server.c -o smi_s.o
+	$(CC) $(WFALG) -std=$(STD) smi_server.c -o smi_s.o
