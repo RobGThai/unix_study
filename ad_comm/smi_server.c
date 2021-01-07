@@ -1,8 +1,64 @@
 #define SERVER_NAME "smsg_server"
 #define DATA_SIZE 200
-#include "smi.h"
+#define MAX_CLIENTS 20
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include "smi.h"
+
+typedef struct {
+    SMIENTITY sq_entity;
+    int sq_fd_server;
+    int sq_fd_server_w;
+    char sq_name[SERVER_NAME_MAX];
+    struct {
+        int cl_fd;
+        pid_t cl_pid;
+    } sq_clients[MAX_CLIENTS];
+    struct client_id sq_client;
+    size_t sq_msgsize;
+    struct smi_msg * sq_msg;
+} SMIQ_FIFO;
+
+static void clients_bgn(SMIQ_FIFO *p) {
+    int i;
+
+    for (i = 0; i < MAX_CLIENTS; i++)
+        p->sq_clients[i].cl_fd = -1;
+}
+
+static void clients_close_all(SMIQ_FIFO *p) {
+    int i;
+    for (i = 0; i < MAX_CLIENTS; i++) {
+        if(p->sq_clients[i].cl_fd != -1) {
+            (void) close(p->sq_clients[i].cl_fd);
+            p->sq_clients[i].cl_fd = -1;
+        }
+    }
+}
+
+static void clients_end(SMIQ_FIFO *p) {
+    clients_close_all(p);
+}
+
+static int clients_find(SMIQ_FIFO *p, pid_t pid) {
+    int i, avail = -1;
+
+    for(i = 0; i < MAX_CLIENTS; i++) {
+        if(p->sq_clients[i].cl_pid == pid)
+            return i;
+
+        if(p->sq_clients[i].cl_fd == -1 && avail == -1)
+            avail = i;
+    }
+
+    if(avail != -1)
+        p->sq_clients[avail].cl_pid = pid;
+
+    return avail;
+}
 
 int main(void) {
     SMIQ *sqp;
