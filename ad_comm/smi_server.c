@@ -1,11 +1,16 @@
 #define SERVER_NAME "smsg_server"
 #define DATA_SIZE 200
 #define MAX_CLIENTS 20
+#define PERM_FILE 0666
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "smi.h"
 
 typedef struct {
@@ -22,6 +27,7 @@ typedef struct {
     struct smi_msg * sq_msg;
 } SMIQ_FIFO;
 
+// Client management functions
 static void clients_bgn(SMIQ_FIFO *p) {
     int i;
 
@@ -60,13 +66,110 @@ static int clients_find(SMIQ_FIFO *p, pid_t pid) {
     return avail;
 }
 
+/*
+ *  Function: setblock
+ *  ------------------
+ *  Control blocking(O_NONBLOCK) flag on the given file descriptor.
+ */
+bool setblock(int fd, bool block) {
+    int flags;
+    flags = fcntl(fd, F_GETFL);
+    if(block)
+        flags &= ~O_NONBLOCK;
+    else
+        flags |= O_NONBLOCK;
+    fcntl(fd, F_SETFL, flags);
+
+    return true;
+}
+
+// FIFO related functions
+
+static void make_fifo_name_server(const SMIQ_FIFO *p, char *fifoname, size_t fifoname_max) {
+    snprintf(fifoname, fifoname_max, "/tmp/smififo-%s", p->sq_name);
+}
+
+static void make_fifo_name_client(pid_t pid, char *fifoname, size_t fifoname_max) {
+    snprintf(fifoname, fifoname_max, "/tmp/smififo%ld", (long)pid);
+}
+
+SMIQ *smi_open_fifo(const char *name, SMIENTITY entity, size_t msgsize) {
+    SMIQ_FIFO *p = NULL;
+    char fifoname[SERVER_NAME_MAX + 50];
+
+    p = calloc(1, sizeof(SMIQ_FIFO));
+    p->sq_msgsize = msgsize + offsetof(struct smi_msg, smi_data);
+    p->sq_msg = calloc(1, p->sq_msgsize);
+    p->sq_entity = entity;
+
+    if(strlen(name) >= SERVER_NAME_MAX) {
+        errno = ENAMETOOLONG;
+        printf("ERROR\n");
+    }
+    
+    strcpy(p->sq_name, name);
+    make_fifo_name_server(p, fifoname, sizeof(fifoname));
+
+    if(p->sq_entity == SMI_SERVER) {
+        clients_bgn(p);
+
+        if(mkfifo(fifoname, PERM_FILE) == -1 && errno != EEXIST)
+            printf("ERROR mkfifo\n");
+        p->sq_fd_server = open(fifoname, O_RDONLY);
+        p->sq_fd_server_w = open(fifoname, O_WRONLY);
+    }else{
+        p->sq_fd_server = open(fifoname, O_WRONLY);
+        make_fifo_name_client(getpid(), fifoname, sizeof(fifoname));
+        (void)unlink(fifoname);
+        mkfifo(fifoname, PERM_FILE);
+        p->sq_clients[0].cl_fd = open(fifoname, O_RDONLY | O_NONBLOCK);
+        setblock(p->sq_clients[0].cl_fd, true);
+        p->sq_clients[0].cl_fd = open(fifoname, O_WRONLY);
+    }
+
+    return (SMIQ *)p;
+}
+
+bool smi_close_fifo(SMIQ *sqp) {
+    SMIQ_FIFO *p = (SMIQ_FIFO *)sqp;
+    clients_end(p);
+    (void)close(p->sq_fd_server);
+    if(p->sq_entity == SMI_CLIENT) {
+        char fifoname[SERVER_NAME_MAX + 50];
+
+        make_fifo_name_client(getpid(), fifoname, sizeof(fifoname));
+        (void)unlink(fifoname);
+    }else {
+        (void)close(p->sq_fd_server_w);
+    }
+    free(p->sq_msg);
+    free(p);
+
+    return true;
+}
+
+bool smi_send_getaddr_fifo(SMIQ *sqp, struct client_id *client, void **addr) {
+    SMIQ_FIFO *p = (SMIQ_FIFO *) sqp;
+    if(p->sq_entity == SMI_SERVER)
+        p->sq_client = *client;
+    *addr = p->sq_msg;
+
+    return true;
+}
+
+// Interface wrapper functions
+
+SMIQ *smi_open(const char *name, SMIENTITY entity, size_t msgsize) {
+    return smi_open_fifo(name, entity, msgsize);
+}
+
 int main(void) {
     SMIQ *sqp;
     struct smi_msg *msg_in, *msg_out;
     int i;
 
     printf("server started MAX(%d)\n", SERVER_NAME_MAX);
-    sqp =smi_open(SERVER_NAME, SMI_SERVER, DATA_SIZE);
+    sqp = smi_open(SERVER_NAME, SMI_SERVER, DATA_SIZE);
     while(true) {
         smi_receive_getaddr(sqp, (void **)&msg_in);
         smi_send_getaddr(sqp, &msg_in->smi_client, (void **)&msg_out);
