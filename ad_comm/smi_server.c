@@ -157,10 +157,86 @@ bool smi_send_getaddr_fifo(SMIQ *sqp, struct client_id *client, void **addr) {
     return true;
 }
 
-// Interface wrapper functions
+bool smi_send_release(SMIQ *sqp) {
+    SMIQ_FIFO *p = (SMIQ_FIFO *)sqp;
+    ssize_t nwrite;
+
+    if(p->sq_entity == SMI_SERVER) {
+        int nclient = clients_find(p, p->sq_client.c_id1);
+        if(nclient == -1 || p->sq_clients[nclient].cl_fd == -1) {
+            errno = EADDRNOTAVAIL;
+            printf("Over capacity, cannot send message.\n");
+        }
+        nwrite = write(p->sq_clients[nclient].cl_fd, p->sq_msg, p->sq_msgsize);
+    }else{
+        p->sq_msg->smi_client.c_id1 = (long) getpid();
+        nwrite = write(p->sq_fd_server, p->sq_msg, p->sq_msgsize);
+    }
+
+    return true;
+}
+
+bool smi_receive_getaddr_fifo(SMIQ *sqp, void **addr) {
+    SMIQ_FIFO *p = (SMIQ_FIFO *)sqp;
+    ssize_t nread;
+
+    if(p->sq_entity == SMI_SERVER) {
+        int nclient;
+        char fifoname[SERVER_NAME_MAX + 50];
+
+        while(true) {
+            nread = read(p->sq_fd_server, p->sq_msg, p->sq_msgsize);
+
+            if(nread == 0) {
+                errno = ENETDOWN;
+                printf("Read fail.\n");
+            }
+
+            if(nread < offsetof(struct smi_msg, smi_data)) {
+                errno = E2BIG;
+                printf("Error: Unexpected data.\n");
+            }
+
+            if((nclient = clients_find(p, (pid_t)p->sq_msg->smi_client.c_id1)) == -1) {
+                // Over capacity, cannot send message.
+                // Client will be blocked indefinitely because of blocking FD.
+                continue; 
+            }
+
+            if(p->sq_clients[nclient].cl_fd == -1) {
+                make_fifo_name_client((pid_t)p->sq_msg->smi_client.c_id1, fifoname, sizeof(fifoname));
+                p->sq_clients[nclient].cl_fd = open(fifoname, O_WRONLY);
+            }
+            break;
+        }
+    }else{
+        nread = read(p->sq_clients[0].cl_fd, p->sq_msg, p->sq_msgsize);
+    }
+    *addr = p->sq_msg;
+
+    return true;
+}
+
+bool smi_receive_release_fifo(SMIQ *sqp) {
+    return true;
+}
+
+// Interface implementation wrapper functions
 
 SMIQ *smi_open(const char *name, SMIENTITY entity, size_t msgsize) {
     return smi_open_fifo(name, entity, msgsize);
+}
+
+bool smi_send_getaddr(SMIQ *sqp, struct client_id *client, void **addr) {
+    return smi_send_getaddr_fifo(sqp, client, addr);
+}
+
+bool smi_receive_getaddr(SMIQ *sqp, void **addr) {
+    return smi_receive_getaddr_fifo(sqp, addr);
+}
+
+bool smi_receive_release(SMIQ *sqp) {
+    return smi_receive_release_fifo(sqp);
 }
 
 int main(void) {
