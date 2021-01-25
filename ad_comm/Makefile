@@ -15,5 +15,5 @@ fclient:
 fifo: fserver fclient
 
 smi_server:
-	@echo 'SMI Server'
+	@echo 'SMI Server (WIP)'
 	$(CC) $(WFALG) -std=$(STD) smi_server.c -o smi_s.o
